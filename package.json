@@ -4,7 +4,7 @@
   "description": "FixTrack QR - Smart Campus Maintenance Reporting System",
   "main": "backend/src/server.js",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install",
-    "start": "cd backend && npm start"
+    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install",
+    "start": "node backend/src/server.js"
   }
 }
