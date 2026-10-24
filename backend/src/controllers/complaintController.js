@@ -1,9 +1,10 @@
 const Complaint = require('../models/Complaint');
 const Location = require('../models/Location');
+const store = require('../utils/dataStore');
 
 // @desc    Create a new complaint
 // @route   POST /api/complaints
-// @access  Private (Student/Admin)
+// @access  Private
 exports.createComplaint = async (req, res) => {
   try {
     const { title, description, category, priority, locationId, qrCodeId } = req.body;
@@ -15,9 +16,43 @@ exports.createComplaint = async (req, res) => {
       });
     }
 
+    if (global.useFallbackDb) {
+      let targetLoc = null;
+      if (locationId) {
+        targetLoc = store.locations.find((l) => l._id === locationId);
+      } else if (qrCodeId) {
+        targetLoc = store.locations.find((l) => l.qrCodeId.toUpperCase() === qrCodeId.toUpperCase().trim());
+      }
+
+      if (!targetLoc) {
+        return res.status(400).json({ success: false, message: 'Valid location is required to file a report' });
+      }
+
+      const newComplaint = {
+        _id: 'cmp_' + Date.now(),
+        title,
+        description,
+        category,
+        priority: priority || 'Medium',
+        location: targetLoc,
+        submittedBy: {
+          _id: req.user._id,
+          name: req.user.name,
+          email: req.user.email,
+          studentId: req.user.studentId || '',
+          department: req.user.department || 'General',
+        },
+        status: 'Pending',
+        adminRemarks: '',
+        createdAt: new Date().toISOString(),
+      };
+
+      store.complaints.unshift(newComplaint);
+      return res.status(201).json({ success: true, message: 'Complaint submitted successfully', data: newComplaint });
+    }
+
     let targetLocationId = locationId;
 
-    // Support submitting by qrCodeId directly
     if (!targetLocationId && qrCodeId) {
       const loc = await Location.findOne({ qrCodeId: qrCodeId.toUpperCase().trim() });
       if (!loc) {
@@ -36,7 +71,6 @@ exports.createComplaint = async (req, res) => {
       });
     }
 
-    // Verify location exists
     const location = await Location.findById(targetLocationId);
     if (!location) {
       return res.status(404).json({
@@ -77,6 +111,13 @@ exports.createComplaint = async (req, res) => {
 // @access  Private
 exports.getMyComplaints = async (req, res) => {
   try {
+    if (global.useFallbackDb) {
+      const myComplaints = store.complaints.filter(
+        (c) => c.submittedBy._id === req.user._id || c.submittedBy.email === req.user.email
+      );
+      return res.json({ success: true, count: myComplaints.length, data: myComplaints });
+    }
+
     const complaints = await Complaint.find({ submittedBy: req.user._id })
       .populate('location')
       .sort({ createdAt: -1 });
@@ -100,20 +141,33 @@ exports.getMyComplaints = async (req, res) => {
 exports.getAllComplaints = async (req, res) => {
   try {
     const { status, category, locationId, search } = req.query;
+
+    if (global.useFallbackDb) {
+      let filtered = [...store.complaints];
+
+      if (status && status !== 'all') {
+        filtered = filtered.filter((c) => c.status === status);
+      }
+      if (category && category !== 'all') {
+        filtered = filtered.filter((c) => c.category === category);
+      }
+      if (locationId) {
+        filtered = filtered.filter((c) => c.location._id === locationId);
+      }
+      if (search) {
+        const q = search.toLowerCase();
+        filtered = filtered.filter(
+          (c) => c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q)
+        );
+      }
+
+      return res.json({ success: true, count: filtered.length, data: filtered });
+    }
+
     let query = {};
-
-    if (status && status !== 'all') {
-      query.status = status;
-    }
-
-    if (category && category !== 'all') {
-      query.category = category;
-    }
-
-    if (locationId) {
-      query.location = locationId;
-    }
-
+    if (status && status !== 'all') query.status = status;
+    if (category && category !== 'all') query.category = category;
+    if (locationId) query.location = locationId;
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -144,56 +198,33 @@ exports.getAllComplaints = async (req, res) => {
 // @access  Private/Admin
 exports.getComplaintStats = async (req, res) => {
   try {
+    if (global.useFallbackDb) {
+      const total = store.complaints.length;
+      const pending = store.complaints.filter((c) => c.status === 'Pending').length;
+      const inProgress = store.complaints.filter((c) => c.status === 'In Progress').length;
+      const resolved = store.complaints.filter((c) => c.status === 'Resolved').length;
+      const rejected = store.complaints.filter((c) => c.status === 'Rejected').length;
+
+      return res.json({
+        success: true,
+        data: {
+          totals: { total, pending, inProgress, resolved, rejected },
+          categoryStats: [],
+          locationStats: [],
+        },
+      });
+    }
+
     const total = await Complaint.countDocuments();
     const pending = await Complaint.countDocuments({ status: 'Pending' });
     const inProgress = await Complaint.countDocuments({ status: 'In Progress' });
     const resolved = await Complaint.countDocuments({ status: 'Resolved' });
     const rejected = await Complaint.countDocuments({ status: 'Rejected' });
 
-    // Category breakdown
-    const categoryStats = await Complaint.aggregate([
-      {
-        $group: {
-          _id: '$category',
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { count: -1 } },
-    ]);
-
-    // Top locations with issues
-    const locationStats = await Complaint.aggregate([
-      {
-        $group: {
-          _id: '$location',
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { count: -1 } },
-      { $limit: 5 },
-      {
-        $lookup: {
-          from: 'locations',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'locationDetails',
-        },
-      },
-      { $unwind: '$locationDetails' },
-    ]);
-
     res.json({
       success: true,
       data: {
-        totals: {
-          total,
-          pending,
-          inProgress,
-          resolved,
-          rejected,
-        },
-        categoryStats,
-        locationStats,
+        totals: { total, pending, inProgress, resolved, rejected },
       },
     });
   } catch (error) {
@@ -210,8 +241,21 @@ exports.getComplaintStats = async (req, res) => {
 exports.updateComplaintStatus = async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
-    const complaint = await Complaint.findById(req.params.id);
 
+    if (global.useFallbackDb) {
+      const complaint = store.complaints.find((c) => c._id === req.params.id);
+      if (!complaint) {
+        return res.status(404).json({ success: false, message: 'Complaint not found' });
+      }
+
+      if (status) complaint.status = status;
+      if (adminRemarks !== undefined) complaint.adminRemarks = adminRemarks;
+      complaint.updatedAt = new Date().toISOString();
+
+      return res.json({ success: true, message: 'Status updated successfully', data: complaint });
+    }
+
+    const complaint = await Complaint.findById(req.params.id);
     if (!complaint) {
       return res.status(404).json({
         success: false,
@@ -221,14 +265,9 @@ exports.updateComplaintStatus = async (req, res) => {
 
     if (status) {
       complaint.status = status;
-      if (status === 'Resolved') {
-        complaint.resolvedAt = new Date();
-      }
+      if (status === 'Resolved') complaint.resolvedAt = new Date();
     }
-
-    if (adminRemarks !== undefined) {
-      complaint.adminRemarks = adminRemarks;
-    }
+    if (adminRemarks !== undefined) complaint.adminRemarks = adminRemarks;
 
     complaint.updatedAt = new Date();
     await complaint.save();

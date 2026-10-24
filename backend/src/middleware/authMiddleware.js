@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const store = require('../utils/dataStore');
 
 const protect = async (req, res, next) => {
   let token;
@@ -20,7 +21,13 @@ const protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fixtrack_secret_key');
-    const user = await User.findById(decoded.id).select('-password');
+
+    let user;
+    if (global.useFallbackDb) {
+      user = store.users.find((u) => u._id === decoded.id);
+    } else {
+      user = await User.findById(decoded.id).select('-password');
+    }
 
     if (!user) {
       return res.status(401).json({

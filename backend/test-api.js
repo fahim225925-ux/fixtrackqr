@@ -3,7 +3,7 @@
  * Tests Auth, Locations, Complaint Submission, and Admin Workflow.
  */
 
-const BASE_URL = process.env.TEST_URL || 'http://localhost:5000/api';
+const BASE_URL = process.env.TEST_URL || 'http://127.0.0.1:5000/api';
 
 async function runTests() {
   console.log('🧪 Starting FixTrack QR Integration Smoke Tests...\n');
