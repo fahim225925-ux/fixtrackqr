@@ -5,8 +5,8 @@
 - **Stack:** MongoDB, Express.js, React.js, Node.js (MERN)
 - **Student Name:** Fahim
 - **Email:** fahim225925@sahrdaya.ac.in
-- **Repository Name:** `fixtrack-qr`
-- **GitHub Target:** `https://github.com/fidhan225053-coder/fixtrack-qr`
+- **Repository Name:** `fixtrackqr`
+- **GitHub Target:** `https://github.com/fahim225925-ux/fixtrackqr.git`
 
 ---
 
