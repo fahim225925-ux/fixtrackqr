@@ -5,14 +5,62 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const demo = urlParams ? urlParams.get('demo') : null;
+    if (demo === 'admin') {
+      return { _id: 'usr_admin_001', name: 'Campus Facilities Admin', email: 'admin@campus.edu', role: 'admin' };
+    }
+    if (demo === 'student') {
+      return { _id: 'usr_student_001', name: 'Alex Johnson', email: 'student@campus.edu', role: 'student' };
+    }
     const savedUser = localStorage.getItem('fixtrack_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('fixtrack_token'));
-  const [loading, setLoading] = useState(true);
+
+  const [token, setToken] = useState(() => {
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    if (urlParams && urlParams.get('demo')) return 'mock_demo_token';
+    return localStorage.getItem('fixtrack_token');
+  });
+
+  const [loading, setLoading] = useState(() => {
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    if (urlParams && urlParams.get('demo')) return false;
+    return true;
+  });
 
   useEffect(() => {
     const verifyUser = async () => {
+      // Check for quick demo query param (e.g. ?demo=admin or ?demo=student)
+      const urlParams = new URLSearchParams(window.location.search);
+      const demoRole = urlParams.get('demo');
+
+      if (demoRole === 'admin') {
+        try {
+          const res = await api.post('/auth/login', { email: 'admin@campus.edu', password: 'admin123' });
+          if (res.data.success) {
+            setUser(res.data.data);
+            setToken(res.data.data.token);
+            localStorage.setItem('fixtrack_token', res.data.data.token);
+            localStorage.setItem('fixtrack_user', JSON.stringify(res.data.data));
+            setLoading(false);
+            return;
+          }
+        } catch (e) {}
+      } else if (demoRole === 'student') {
+        try {
+          const res = await api.post('/auth/login', { email: 'student@campus.edu', password: 'student123' });
+          if (res.data.success) {
+            setUser(res.data.data);
+            setToken(res.data.data.token);
+            localStorage.setItem('fixtrack_token', res.data.data.token);
+            localStorage.setItem('fixtrack_user', JSON.stringify(res.data.data));
+            setLoading(false);
+            return;
+          }
+        } catch (e) {}
+      }
+
       const storedToken = localStorage.getItem('fixtrack_token');
       if (storedToken) {
         try {

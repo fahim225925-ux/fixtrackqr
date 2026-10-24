@@ -4,8 +4,33 @@ import QRPrintCard from '../components/QRPrintCard';
 import { MapPin, Plus, Trash2, Printer, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function ManageLocations() {
-  const [locations, setLocations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [locations, setLocations] = useState([
+    {
+      _id: 'loc_001_demo',
+      building: 'Science Block',
+      floor: '1st Floor',
+      roomNumber: 'LH 101',
+      qrCodeId: 'LOC-SCI-101',
+      description: 'Large Physics Lecture Hall with dual projectors',
+    },
+    {
+      _id: 'loc_002_demo',
+      building: 'Engineering Block',
+      floor: '3rd Floor',
+      roomNumber: 'Lab 302',
+      qrCodeId: 'LOC-ENG-302',
+      description: 'Advanced Computer Networks & Database Laboratory',
+    },
+    {
+      _id: 'loc_003_demo',
+      building: 'Main Academic Wing',
+      floor: 'Ground Floor',
+      roomNumber: 'Seminar Hall A',
+      qrCodeId: 'LOC-MAIN-SEM-A',
+      description: 'Auditorium style hall for guest lectures and conferences',
+    },
+  ]);
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');

@@ -1,0 +1,10 @@
+{
+  "name": "fixtrack-qr",
+  "version": "1.0.0",
+  "description": "FixTrack QR - Smart Campus Maintenance Reporting System",
+  "main": "backend/src/server.js",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install",
+    "start": "cd backend && npm start"
+  }
+}

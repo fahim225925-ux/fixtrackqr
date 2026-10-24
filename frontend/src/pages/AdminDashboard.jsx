@@ -19,9 +19,47 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const [complaints, setComplaints] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [complaints, setComplaints] = useState([
+    {
+      _id: 'cmp_101',
+      title: 'Ceiling projector HDMI port loose / intermittent signal',
+      description: 'The ceiling projector in LH 101 overheats or loses connection mid-lecture.',
+      category: 'Projector/AV',
+      priority: 'High',
+      status: 'In Progress',
+      adminRemarks: 'AV technician scheduled to replace HDMI splitter on Monday morning.',
+      location: { building: 'Science Block', roomNumber: 'LH 101', floor: '1st Floor', qrCodeId: 'LOC-SCI-101' },
+      submittedBy: { name: 'Alex Johnson', studentId: 'CS-2024-042' },
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      _id: 'cmp_102',
+      title: 'Broken desk armrest in row 3',
+      description: 'Third row desk has sharp broken plastic on the armrest, causing safety issue.',
+      category: 'Furniture',
+      priority: 'Medium',
+      status: 'Pending',
+      location: { building: 'Science Block', roomNumber: 'LH 101', floor: '1st Floor', qrCodeId: 'LOC-SCI-101' },
+      submittedBy: { name: 'Priya Sharma', studentId: 'EC-2024-019' },
+      createdAt: new Date(Date.now() - 172800000).toISOString(),
+    },
+    {
+      _id: 'cmp_103',
+      title: 'Ethernet port #14 loose / no connectivity',
+      description: 'Workstation 14 does not connect to the campus intranet. Cable jack is loose.',
+      category: 'Wi-Fi/Network',
+      priority: 'Medium',
+      status: 'Resolved',
+      adminRemarks: 'Crimped new RJ-45 connector and tested throughput: 1 Gbps verified.',
+      location: { building: 'Engineering Block', roomNumber: 'Lab 302', floor: '3rd Floor', qrCodeId: 'LOC-ENG-302' },
+      submittedBy: { name: 'Rahul Verma', studentId: 'CS-2024-088' },
+      createdAt: new Date(Date.now() - 259200000).toISOString(),
+    },
+  ]);
+  const [stats, setStats] = useState({
+    totals: { total: 18, pending: 5, inProgress: 4, resolved: 9 },
+  });
+  const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');

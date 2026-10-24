@@ -6,8 +6,30 @@ import PriorityBadge from '../components/PriorityBadge';
 import { PlusCircle, RefreshCw, AlertCircle, MapPin, Clock, MessageSquareQuote } from 'lucide-react';
 
 export default function StudentDashboard() {
-  const [complaints, setComplaints] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [complaints, setComplaints] = useState([
+    {
+      _id: 'cmp_001_demo',
+      title: 'Ceiling projector HDMI port loose / intermittent signal',
+      description: 'The ceiling projector in LH 101 overheats or loses connection mid-lecture.',
+      category: 'Projector/AV',
+      priority: 'High',
+      status: 'In Progress',
+      adminRemarks: 'AV technician scheduled to replace HDMI splitter on Monday morning.',
+      location: { building: 'Science Block', roomNumber: 'LH 101', floor: '1st Floor' },
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      _id: 'cmp_002_demo',
+      title: 'Broken desk armrest in row 3',
+      description: 'Third row desk has sharp broken plastic on the armrest, causing safety issue.',
+      category: 'Furniture',
+      priority: 'Medium',
+      status: 'Pending',
+      location: { building: 'Science Block', roomNumber: 'LH 101', floor: '1st Floor' },
+      createdAt: new Date(Date.now() - 172800000).toISOString(),
+    },
+  ]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const fetchMyComplaints = async () => {
